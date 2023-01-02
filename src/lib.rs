@@ -28,9 +28,9 @@ pub struct Config {
 }
 
 impl Series {
-    fn _print(&self) {
+    fn print(&self) {
         println!(
-            "the serie is {}, has {} episodes , with limit {}",
+            "{} on episode {}, expected: {}\n",
             self.name, self.ep, self.limit
         );
     }
@@ -57,7 +57,7 @@ pub fn config(mut args: impl Iterator<Item = String>) -> Result<Config, &'static
 pub fn run(config: Config) {
     //get Series
     let file_contents = fs::read_to_string("./series.json").unwrap();
-    let mut series: Vec<Series> = serde_json::from_str(&file_contents).unwrap();
+    let series: Vec<Series> = serde_json::from_str(&file_contents).unwrap();
 
     match config.mode {
         Mode::Exec => {
@@ -70,7 +70,13 @@ pub fn run(config: Config) {
             Count::Down => {
                 update_count(series, Count::Down);
             }
-            Count::Neutral => (),
+            Count::Neutral => {
+                println!("*************************************\n");
+                for s in series {
+                    s.print();
+                }
+                println!("*************************************");
+            }
         },
     }
 }
@@ -103,6 +109,10 @@ fn update_count(series: Vec<Series>, count: Count) {
     }
 }
 
-fn write_to_json(series: Vec<Series>) {}
+fn write_to_json(series: Vec<Series>) {
+    // needs to update series.json to be the new updated series
+    let json_series = serde_json::to_string_pretty(&series).unwrap();
+    fs::write("series.json", json_series);
+}
 
 fn open_tabs(series: Vec<Series>) {}
