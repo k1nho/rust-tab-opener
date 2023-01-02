@@ -5,5 +5,5 @@ fn main() {
     let args = env::args();
     let config = config(args).unwrap();
     println!("config is {:?}", config);
-    // run(config)
+    run(config)
 }
