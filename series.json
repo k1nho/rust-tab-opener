@@ -1,13 +1,12 @@
 [
-    {
-        "name" : "pokemon",
-        "ep" : 12,
-        "limit": 24
-
-    },
-    {
-        "name" : "Beserk",
-        "ep" : 20,
-        "limit": 50
-    }
+  {
+    "name": "pokemon",
+    "ep": 12,
+    "limit": 24
+  },
+  {
+    "name": "Beserk",
+    "ep": 20,
+    "limit": 50
+  }
 ]
