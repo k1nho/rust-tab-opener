@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::process;
+use std::thread;
+use std::time;
 
 #[derive(Debug)]
 pub enum Mode {
@@ -115,4 +118,19 @@ fn write_to_json(series: Vec<Series>) {
     fs::write("series.json", json_series);
 }
 
-fn open_tabs(series: Vec<Series>) {}
+fn open_tabs(series: Vec<Series>) {
+    // spawn concurrent child processes for each serie
+    for serie in series {
+        thread::spawn(move || {
+            serie.print();
+            // mac command
+            process::Command::new("open")
+                .args(["-a", "Google Chrome", "http://google.com"])
+                .spawn()
+                .expect("command failed to start");
+        });
+    }
+
+    // sleep for now (substitute for actual join)
+    thread::sleep(time::Duration::from_secs(5));
+}
