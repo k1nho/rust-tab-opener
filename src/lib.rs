@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::process;
-use std::thread;
+use std::thread::{self, JoinHandle};
 use std::time;
 
 #[derive(Debug)]
@@ -120,17 +120,21 @@ fn write_to_json(series: Vec<Series>) {
 
 fn open_tabs(series: Vec<Series>) {
     // spawn concurrent child processes for each serie
+    let mut handles: Vec<JoinHandle<()>> = vec![];
     for serie in series {
-        thread::spawn(move || {
+        let handle = thread::spawn(move || {
             serie.print();
             // mac command
+            let url = format!("http://google.com/search?q={}", serie.name);
             process::Command::new("open")
-                .args(["-a", "Google Chrome", "http://google.com"])
+                .args(["-a", "Google Chrome", &url])
                 .spawn()
                 .expect("command failed to start");
         });
+        handles.push(handle);
     }
 
-    // sleep for now (substitute for actual join)
-    thread::sleep(time::Duration::from_secs(5));
+    for handle in handles {
+        handle.join().unwrap();
+    }
 }
