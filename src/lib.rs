@@ -1,8 +1,8 @@
+use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::process;
 use std::thread::{self, JoinHandle};
-use std::time;
 
 #[derive(Debug)]
 pub enum Mode {
@@ -115,17 +115,20 @@ fn update_count(series: Vec<Series>, count: Count) {
 fn write_to_json(series: Vec<Series>) {
     // needs to update series.json to be the new updated series
     let json_series = serde_json::to_string_pretty(&series).unwrap();
-    fs::write("series.json", json_series);
+    fs::write("series.json", json_series).unwrap();
 }
 
 fn open_tabs(series: Vec<Series>) {
+    // load urls
+    dotenv().ok();
+    let base_url = std::env::var("BASE_URL").expect("BASE_URL is not set");
     // spawn concurrent child processes for each serie
     let mut handles: Vec<JoinHandle<()>> = vec![];
     for serie in series {
+        let base_url = base_url.clone();
         let handle = thread::spawn(move || {
-            serie.print();
             // mac command
-            let url = format!("http://google.com/search?q={}", serie.name);
+            let url = format!("{}/{}{}", base_url, serie.name, serie.ep);
             process::Command::new("open")
                 .args(["-a", "Google Chrome", &url])
                 .spawn()
