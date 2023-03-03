@@ -124,7 +124,7 @@ fn open_tabs(series: Vec<Series>) {
     dotenv().ok();
     let base_url = std::env::var("BASE_URL").expect("BASE_URL is not set");
     // spawn concurrent child processes for each serie
-    let mut handles: Vec<JoinHandle<()>> = vec![];
+    let mut handles: Vec<JoinHandle<Result<(), std::io::Error>>> = vec![];
 
     for serie in series {
         let base_url = base_url.clone();
@@ -132,17 +132,18 @@ fn open_tabs(series: Vec<Series>) {
             // mac command
             let url = format!("{}/{}{}", base_url, serie.name, serie.ep);
             match OS {
-                "macos" => {
-                    process::Command::new("open")
-                        .args(["-a", "Google Chrome", &url])
-                        .spawn()
-                        .expect("command failed to start");
+                "macos" => process::Command::new("open")
+                    .args(["-a", "Google Chrome", &url])
+                    .spawn()
+                    .map(|_| ()),
+                "windows" => process::Command::new("cmd")
+                    .args(["/C", "start", "/B", "chrome", &url])
+                    .spawn()
+                    .map(|_| ()),
+                "linux" => {
+                    todo!()
                 }
-                "windows" => {}
-                "linux" => {}
-                _ => {
-                    println!("Unknow os")
-                }
+                _ => Err(std::io::Error::new(std::io::ErrorKind::Other, "Unknown OS")),
             }
             // windows
             // process::Command::new("start").args(["chrome", &url]).spawn().expect("command failed
@@ -152,6 +153,6 @@ fn open_tabs(series: Vec<Series>) {
     }
 
     for handle in handles {
-        handle.join().unwrap();
+        handle.join().unwrap().unwrap();
     }
 }
