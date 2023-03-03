@@ -1,5 +1,6 @@
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
+use std::env::consts::OS;
 use std::fs;
 use std::process;
 use std::thread::{self, JoinHandle};
@@ -17,13 +18,6 @@ pub enum Count {
     Neutral,
 }
 
-#[derive(Debug)]
-pub enum OS {
-    Ios,
-    Windows,
-    Linux,
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 struct Series {
     name: String,
@@ -35,7 +29,6 @@ struct Series {
 pub struct Config {
     mode: Mode,
     count: Count,
-    os: OS,
 }
 
 impl Series {
@@ -62,13 +55,7 @@ pub fn config(mut args: impl Iterator<Item = String>) -> Result<Config, &'static
         _ => Count::Neutral,
     };
 
-    let os = match args.next() {
-        Some(os) if &os == "mac" => OS::Ios,
-        Some(os) if &os == "linux" => OS::Linux,
-        _ => OS::Windows,
-    };
-
-    Ok(Config { mode, count, os })
+    Ok(Config { mode, count })
 }
 
 pub fn run(config: Config) {
@@ -78,7 +65,7 @@ pub fn run(config: Config) {
 
     match config.mode {
         Mode::Exec => {
-            open_tabs(series, config.os);
+            open_tabs(series);
         }
         Mode::Write => match config.count {
             Count::Up => {
@@ -132,7 +119,7 @@ fn write_to_json(series: Vec<Series>) {
     fs::write("series.json", json_series).unwrap();
 }
 
-fn open_tabs(series: Vec<Series>, os: OS) {
+fn open_tabs(series: Vec<Series>) {
     // load urls
     dotenv().ok();
     let base_url = std::env::var("BASE_URL").expect("BASE_URL is not set");
@@ -144,15 +131,18 @@ fn open_tabs(series: Vec<Series>, os: OS) {
         let handle = thread::spawn(move || {
             // mac command
             let url = format!("{}/{}{}", base_url, serie.name, serie.ep);
-            match os {
-                OS::Ios => {
+            match OS {
+                "macos" => {
                     process::Command::new("open")
                         .args(["-a", "Google Chrome", &url])
                         .spawn()
                         .expect("command failed to start");
                 }
-                OS::Windows => {}
-                OS::Linux => {}
+                "windows" => {}
+                "linux" => {}
+                _ => {
+                    println!("Unknow os")
+                }
             }
             // windows
             // process::Command::new("start").args(["chrome", &url]).spawn().expect("command failed
