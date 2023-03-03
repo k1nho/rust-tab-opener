@@ -17,6 +17,13 @@ pub enum Count {
     Neutral,
 }
 
+#[derive(Debug)]
+pub enum OS {
+    Ios,
+    Windows,
+    Linux,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct Series {
     name: String,
@@ -28,6 +35,7 @@ struct Series {
 pub struct Config {
     mode: Mode,
     count: Count,
+    os: OS,
 }
 
 impl Series {
@@ -54,7 +62,13 @@ pub fn config(mut args: impl Iterator<Item = String>) -> Result<Config, &'static
         _ => Count::Neutral,
     };
 
-    Ok(Config { mode, count })
+    let os = match args.next() {
+        Some(os) if &os == "mac" => OS::Ios,
+        Some(os) if &os == "linux" => OS::Linux,
+        _ => OS::Windows,
+    };
+
+    Ok(Config { mode, count, os })
 }
 
 pub fn run(config: Config) {
@@ -64,7 +78,7 @@ pub fn run(config: Config) {
 
     match config.mode {
         Mode::Exec => {
-            open_tabs(series);
+            open_tabs(series, config.os);
         }
         Mode::Write => match config.count {
             Count::Up => {
@@ -118,21 +132,31 @@ fn write_to_json(series: Vec<Series>) {
     fs::write("series.json", json_series).unwrap();
 }
 
-fn open_tabs(series: Vec<Series>) {
+fn open_tabs(series: Vec<Series>, os: OS) {
     // load urls
     dotenv().ok();
     let base_url = std::env::var("BASE_URL").expect("BASE_URL is not set");
     // spawn concurrent child processes for each serie
     let mut handles: Vec<JoinHandle<()>> = vec![];
+
     for serie in series {
         let base_url = base_url.clone();
         let handle = thread::spawn(move || {
             // mac command
             let url = format!("{}/{}{}", base_url, serie.name, serie.ep);
-            process::Command::new("open")
-                .args(["-a", "Google Chrome", &url])
-                .spawn()
-                .expect("command failed to start");
+            match os {
+                OS::Ios => {
+                    process::Command::new("open")
+                        .args(["-a", "Google Chrome", &url])
+                        .spawn()
+                        .expect("command failed to start");
+                }
+                OS::Windows => {}
+                OS::Linux => {}
+            }
+            // windows
+            // process::Command::new("start").args(["chrome", &url]).spawn().expect("command failed
+            // to start")
         });
         handles.push(handle);
     }
