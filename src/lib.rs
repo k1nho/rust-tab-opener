@@ -145,9 +145,6 @@ fn open_tabs(series: Vec<Series>) {
                 }
                 _ => Err(std::io::Error::new(std::io::ErrorKind::Other, "Unknown OS")),
             }
-            // windows
-            // process::Command::new("start").args(["chrome", &url]).spawn().expect("command failed
-            // to start")
         });
         handles.push(handle);
     }
